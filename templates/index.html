@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI英会話練習</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        #chat-panel {
+            flex: 1;
+        }
+
+        #chat-log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 600px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+
+        .user-text {
+            text-align: right;
+            color: blue;
+        }
+
+        .ai-text {
+            text-align: left;
+            color: green;
+        }
+
+        .correction {
+            background-color: #f0f0f0;
+            border-left: 5px solid #ffa500;
+            padding: 8px;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        #status {
+            font-style: italic;
+            color: #555;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #side-panel {
+            flex: 0 0 440px;
+            border-left: 1px solid #ccc;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>AI英会話練習</h1>
+    <div class="main-container">
+        <div id="chat-panel">
+            <div id="chat-log"></div>
+            <div id="status">...</div>
+            <button id="start-btn">会話開始</button>
+            <button id="record-btn" disabled>マイクをオンにして話す</button>
+        </div>
+        <div id="side-panel">
+            <h3>英作文サポート</h3>
+            <textarea id="jp-input" rows="4" style="width: 100%;" placeholder="日本語で入力"></textarea>
+            <button id="translate-btn">英語にする</button>
+            <div id="en-suggestion" style="margin-top: 10px; color: #333;"></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>
