@@ -10,7 +10,6 @@ def create_prompt(history, user_text):
     Corrected: [The corrected sentence for user to speak English better, if any changes are needed]
     Explanation: [A simple explanation in Japanese about the correction]
     """
-    # Geminiに渡すためのプロンプトを組み立てる
     prompt_history = [system_instruction]
     for item in history:
         if item["role"] == "user":

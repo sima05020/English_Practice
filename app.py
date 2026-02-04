@@ -6,17 +6,18 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from google.cloud import speech, texttospeech
 
-from prompt import create_prompt  # プロンプトを別ファイルから読み込み
+from prompt import create_prompt
 
-# 環境変数の読み込みとAPIクライアントの初期化
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 speech_client = speech.SpeechClient()
 tts_client = texttospeech.TextToSpeechClient()
 
+GEMINI_MODEL = "gemini-2.0-flash"
+
+
 app = Flask(__name__)
 
-# 会話履歴をサーバー側で保持（プロトタイプのため簡易的に）
 conversation_history = []
 
 
@@ -26,38 +27,61 @@ def translate():
     if not jp_text:
         return jsonify({"error": "日本語が入力されていません"}), 400
 
-    # Gemini APIで英訳を生成
     prompt = (
         "あなたは英会話の先生です。以下の日本語を、会話文における自然な英語に翻訳してください。翻訳結果以外を出力する必要はありません。フォーマルなものとカジュアルなものの2パターンのみを出力してください。\n"
         f"日本語: {jp_text}\n"
     )
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(GEMINI_MODEL)
     gemini_response = model.generate_content(prompt)
     en_text = gemini_response.text.strip()
 
     return jsonify({"en_text": en_text})
 
 
-# エンドポイント1: 会話開始
+@app.route("/generate-theme", methods=["POST"])
+def generate_theme():
+    theme_input = request.json.get("theme_input", "")
+    if not theme_input:
+        return jsonify({"error": "テーマが入力されていません"}), 400
+
+    prompt = (
+        "あなたは英会話の先生です。以下のキーワードやトピックをもとに、"
+        "英会話練習に適した会話の始まりとなる質問を英語で1つ生成してください。"
+        "自然で興味深い質問にしてください。質問文のみを出力し、他の説明は不要です。\n"
+        f"テーマ: {theme_input}\n"
+    )
+    model = genai.GenerativeModel(GEMINI_MODEL)
+    gemini_response = model.generate_content(prompt)
+    generated_theme = gemini_response.text.strip()
+
+    return jsonify({"generated_theme": generated_theme})
+
+
 @app.route("/start", methods=["POST"])
 def start_conversation():
-    # 会話履歴をリセット
+
     conversation_history.clear()
 
-    # テーマ候補をリスト化
-    themes = [
-        "Let's talk about your favorite movie. What is it?",
-        "What country would you like to visit and why?",
-        "Tell me about a memorable experience you had.",
-        "Do you prefer cats or dogs? Why?",
-        "What is your favorite food?",
-        "Describe your dream job.",
-        "What do you like to do on weekends?",
-        "If you could have any superpower, what would it be?",
-        "What is a book you recommend?",
-        "How do you usually spend your holidays?",
-    ]
-    selected_theme = random.choice(themes)
+    custom_theme = request.json.get("custom_theme", "") if request.is_json else ""
+
+    if custom_theme:
+        selected_theme = custom_theme
+    else:
+        # テーマ候補をリスト化
+        themes = [
+            "Let's talk about your favorite movie. What is it?",
+            "What country would you like to visit and why?",
+            "Tell me about a memorable experience you had.",
+            "Do you prefer cats or dogs? Why?",
+            "What is your favorite food?",
+            "Describe your dream job.",
+            "What do you like to do on weekends?",
+            "If you could have any superpower, what would it be?",
+            "What is a book you recommend?",
+            "How do you usually spend your holidays?",
+        ]
+        selected_theme = random.choice(themes)
+
     initial_text = f"Hi there! I'm your AI Friend,and your partner for English Speaking. {selected_theme}"
 
     conversation_history.append({"role": "model", "parts": [initial_text]})
@@ -118,10 +142,9 @@ def chat():
 
     # 3. Gemini APIで応答と添削を生成
     prompt = create_prompt(conversation_history, user_text)  # プロンプトを生成
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(GEMINI_MODEL)
     gemini_response = model.generate_content(prompt)
 
-    # Geminiからの応答をパースして、応答と添削に分ける
     response_text = gemini_response.text
     ai_reply_text = (
         response_text.split("[CORRECTION]")[0].replace("AI_RESPONSE:", "").strip()

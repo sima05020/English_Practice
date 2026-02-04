@@ -37,5 +37,4 @@ if __name__ == "__main__":
     def maximize():
         window.maximize()
 
-    # func に max
     webview.start(maximize)

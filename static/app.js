@@ -2,11 +2,15 @@ const startBtn = document.getElementById('start-btn');
 const recordBtn = document.getElementById('record-btn');
 const chatLog = document.getElementById('chat-log');
 const statusDiv = document.getElementById('status');
+const themeInput = document.getElementById('theme-input');
+const generateThemeBtn = document.getElementById('generate-theme-btn');
+const generatedThemeDisplay = document.getElementById('generated-theme-display');
 let mediaRecorder;
 let audioChunks = [];
 let initialText = '';
 let initialAudioContent = null;
 let conversationStarted = false;
+let customTheme = '';
 
 // 再生用のAudioContext
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -21,14 +25,51 @@ function playAudio(hexString) {
     });
 }
 
+generateThemeBtn.addEventListener('click', async () => {
+    const themeInputValue = themeInput.value.trim();
+    if (!themeInputValue) {
+        generatedThemeDisplay.textContent = 'テーマを入力してください。';
+        generatedThemeDisplay.style.color = '#d9534f';
+        return;
+    }
+    generatedThemeDisplay.textContent = 'テーマを生成中...';
+    generatedThemeDisplay.style.color = '#666';
+    try {
+        const response = await fetch('/generate-theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ theme_input: themeInputValue })
+        });
+        const data = await response.json();
+        if (data.generated_theme) {
+            customTheme = data.generated_theme;
+            generatedThemeDisplay.textContent = `生成されたテーマ: ${customTheme}`;
+            generatedThemeDisplay.style.color = '#5cb85c';
+        } else {
+            generatedThemeDisplay.textContent = 'テーマ生成に失敗しました。';
+            generatedThemeDisplay.style.color = '#d9534f';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        generatedThemeDisplay.textContent = 'エラーが発生しました。';
+        generatedThemeDisplay.style.color = '#d9534f';
+    }
+});
+
 // 会話開始ボタン
 startBtn.addEventListener('click', async () => {
     statusDiv.textContent = 'AIが会話テーマを提示中...';
     recordBtn.disabled = true;
     chatLog.innerHTML = '';
     conversationStarted = true;
-    // サーバーから初回メッセージと音声取得
-    const response = await fetch('/start', { method: 'POST' });
+
+    const requestBody = customTheme ? { custom_theme: customTheme } : {};
+
+    const response = await fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
     const data = await response.json();
     initialText = data.text;
     initialAudioContent = data.audio_content;
@@ -140,7 +181,6 @@ translateBtn.addEventListener('click', async () => {
 });
 
 
-// 初期化処理：会話を開始
 async function startConversation() {
     statusDiv.textContent = '準備中...';
     const response = await fetch('/start', { method: 'POST' });
@@ -149,5 +189,3 @@ async function startConversation() {
     playAudio(data.audio_content);
     statusDiv.textContent = 'マイクボタンを押して話してください。';
 }
-
-// ページ読み込み時に会話を開始

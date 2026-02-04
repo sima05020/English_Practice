@@ -69,6 +69,13 @@
     <h1>AI英会話練習</h1>
     <div class="main-container">
         <div id="chat-panel">
+            <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; background-color: #f9f9f9;">
+                <h3 style="margin-top: 0;">会話テーマ生成</h3>
+                <input id="theme-input" type="text" placeholder="テーマを入力 (例: 趣味、旅行、食べ物)"
+                    style="width: 70%; padding: 8px;" />
+                <button id="generate-theme-btn" style="padding: 8px 15px;">テーマ生成</button>
+                <div id="generated-theme-display" style="margin-top: 10px; color: #333; font-style: italic;"></div>
+            </div>
             <div id="chat-log"></div>
             <div id="status">...</div>
             <button id="start-btn">会話開始</button>
